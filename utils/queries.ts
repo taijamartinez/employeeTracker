@@ -2,28 +2,43 @@ import pool from "../db/connection";
 
 // Get all departments
 export async function getAllDepartments() {
-    const result = await pool.query("SELECT * FROM department");
+    const result = await pool.query(`SELECT * FROM department;`);
+    //console.log("Departments:", result.rows); //check if it works
     return result.rows;
 }
 
 // Get all roles
 export async function getAllRoles() {
     const result = await pool.query(`
-        SELECT role.id, role.title, role.salary, department.name AS department
+        SELECT 
+        role.id, 
+        role.title, 
+        role.salary, 
+        department.name AS department
         FROM role
-        JOIN department ON role.department_id + department.id
+        JOIN department ON department.id = role.department_id
     `);
+    //console.log("Roles:", result.rows); //check if it works
     return result.rows;
 }
 
-// Get all employees
+//get all employees
 export async function getAllEmployees() {
     const result = await pool.query(`
-        SELECT employee.id, employee.first_name, employee.last_name, role.title AS job_title, department.name AS department, role.salary, employee.manager_id
-        FROM employee
-        JOIN role ON employee.role_id = role.id
-        JOIN department ON role.department_id = department.id
+        SELECT 
+            e.id, 
+            e.first_name, 
+            e.last_name, 
+            role.title AS job_title, 
+            department.name AS department, 
+            role.salary, 
+            COALESCE(CONCAT(m.first_name, ' ', m.last_name), 'None') AS manager
+        FROM employee e
+        JOIN role ON role.id = e.role_id
+        JOIN department ON department.id = role.department_id
+        LEFT JOIN employee m ON e.manager_id = m.id;
     `);
+    return result.rows;
 }
 
 // add department
@@ -48,3 +63,13 @@ export async function updateEmployeeRole(employeeId: number, newRoleId: number) 
     await pool.query("UPDATE employee SET role_id = $1 WHERE id = $2", 
         [newRoleId, employeeId]);
 }
+
+//async function testQueries() {
+    //await getAllDepartments();
+    //await getAllRoles();
+    //await getAllEmployees();
+    //process.exit(); // make sure script exits after testing
+//}
+
+//run all queries when executing `queries.ts`
+//testQueries();
